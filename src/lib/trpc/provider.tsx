@@ -7,7 +7,8 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
 import { useState } from 'react';
 import { TRPCProvider as TRPCContextProvider } from './client';
 import superjson from 'superjson';
@@ -49,6 +50,12 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [
+        loggerLink({
+          enabled: (opts) =>
+            (process.env.NODE_ENV === 'development' &&
+              typeof window !== 'undefined') ||
+            (opts.direction === 'down' && opts.result instanceof Error),
+        }),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
           transformer: superjson,
@@ -67,6 +74,9 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       <TRPCContextProvider trpcClient={trpcClient} queryClient={queryClient}>
         {children}
       </TRPCContextProvider>
+      {process.env.NODE_ENV === 'development' && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
     </QueryClientProvider>
   );
 }
