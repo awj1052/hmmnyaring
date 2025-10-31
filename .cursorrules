@@ -1,0 +1,69 @@
+# Cursor AI Rules for Hackathon Starter
+
+## 프로젝트 컨텍스트
+이 프로젝트는 Next.js 15 + tRPC + Prisma + NextAuth를 사용하는 해커톤 보일러플레이트입니다.
+
+## 코딩 스타일
+
+### TypeScript
+- 모든 파일에 TypeScript 사용
+- `any` 타입 지양, 명시적 타입 선언
+- 인터페이스보다 `type` 선호 (일관성)
+
+### React 컴포넌트
+- 함수형 컴포넌트 사용
+- 'use client' 지시어가 필요한 경우 파일 상단에 명시
+- Props는 인라인 타입 또는 별도 타입 정의
+
+### tRPC
+- 모든 프로시저에 Zod를 사용한 입력 검증
+- 보호된 라우트는 `protectedProcedure` 사용
+- 에러는 `TRPCError` 사용
+
+### Prisma
+- 모든 모델에 `createdAt`, `updatedAt` 추가
+- 관계는 `onDelete: Cascade` 사용
+- 인덱스는 자주 쿼리하는 필드에 추가
+
+### 파일 구조
+- 라우터는 `src/server/routers/` 에 생성
+- 컴포넌트는 기능별로 그룹화
+- 유틸리티 함수는 `src/lib/utils.ts`
+
+### 네이밍
+- 파일명: kebab-case (예: `user-menu.tsx`)
+- 컴포넌트: PascalCase (예: `UserMenu`)
+- 함수/변수: camelCase (예: `getUserById`)
+- 상수: UPPER_SNAKE_CASE (예: `MAX_FILE_SIZE`)
+
+## 자주 사용하는 패턴
+
+### 새 tRPC 라우터 생성 시
+1. `src/server/routers/[name].ts` 파일 생성
+2. `createTRPCRouter`로 라우터 정의
+3. `_app.ts`에 등록
+4. 클라이언트에서 `trpc.[name].[procedure]` 사용
+
+### 새 Prisma 모델 추가 시
+1. `schema.prisma`에 모델 정의
+2. `pnpm db:push` 실행
+3. 필요시 시드 데이터 업데이트
+
+### 보호된 페이지 생성 시
+```typescript
+const session = await auth();
+if (!session) redirect('/login');
+```
+
+## 금지 사항
+- console.log 프로덕션 코드에 남기지 않기
+- 하드코딩된 환경변수 값
+- 인라인 스타일 (Tailwind 사용)
+- 직접적인 Prisma import (항상 `@/server/db`에서 import)
+
+## AI 어시스턴스 가이드
+- 코드 생성 시 JSDoc 주석 포함
+- tRPC 라우터는 완전한 CRUD 세트로 생성
+- 에러 처리 항상 포함
+- 타입 안전성 유지
+
