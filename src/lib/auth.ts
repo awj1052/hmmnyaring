@@ -19,14 +19,44 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
+      role: string;
+      needsProfile?: boolean;
     } & DefaultSession['user'];
   }
+  
+  interface User {
+    role?: string;
+    needsProfile?: boolean;
+  }
 }
+
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  // 🔒 보안: 명시적 쿠키 설정
+  cookies: {
+    sessionToken: {
+      name: '__Secure-next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: serverEnv.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: '__Host-next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: serverEnv.NODE_ENV === 'production',
+      },
+    },
   },
   pages: {
     signIn: '/login',
@@ -58,6 +88,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const { email, password } = parsedCredentials.data;
 
+        // 🔒 보안: 로그인 Rate Limiting (5분당 5회)
+        const { loginRateLimit, checkRateLimit } = await import('@/lib/simple-rate-limit');
+        const rateLimitResult = await checkRateLimit(
+          loginRateLimit,
+          email.toLowerCase()
+        );
+
+        if (!rateLimitResult.success) {
+          console.warn('[Auth] Login rate limit exceeded:', {
+            email: email.toLowerCase(),
+            timestamp: new Date().toISOString(),
+          });
+          return null; // 브루트포스 시도로 간주
+        }
+
         // 유저 조회
         const user = await prisma.user.findUnique({
           where: { email },
@@ -79,22 +124,84 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           image: user.image,
+          role: user.role,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account }) {
+      // Google 로그인인 경우 - 항상 true를 반환하여 로그인 완료
+      if (account?.provider === 'google') {
+        // 사용자 프로필 확인
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          include: {
+            guideProfile: true,
+            travelerProfile: true,
+          },
+        });
+
+        // 프로필 상태를 user 객체에 추가 (jwt 콜백에서 사용)
+        if (dbUser && !dbUser.guideProfile && !dbUser.travelerProfile) {
+          user.needsProfile = true;
+        }
+      }
+      return true;
+    },
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
+        token.role = user.role;
+        // Google 로그인 시 프로필 필요 여부 저장
+        if ('needsProfile' in user) {
+          token.needsProfile = user.needsProfile;
+        }
       }
+      
+      // update trigger일 때만 DB 확인 (서버 사이드에서 호출됨, Edge가 아님)
+      if (trigger === 'update' && token.id && token.needsProfile) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: {
+              role: true,
+              guideProfile: true,
+              travelerProfile: true,
+            },
+          });
+          
+          if (dbUser && (dbUser.guideProfile || dbUser.travelerProfile)) {
+            token.needsProfile = false;
+            token.role = dbUser.role;
+          }
+        } catch (error) {
+          console.error('[Auth JWT] Error checking profile:', error);
+        }
+      }
+      
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.user.needsProfile = token.needsProfile as boolean | undefined;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // 로그인 후 리다이렉트 처리
+      // callbackUrl이 있으면 그것을 사용
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      // 상대 경로인 경우
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      // 기본값
+      return baseUrl;
     },
   },
 });

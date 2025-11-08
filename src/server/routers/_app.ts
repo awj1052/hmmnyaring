@@ -5,12 +5,24 @@
  */
 
 import { createTRPCRouter } from '../trpc';
-import { postRouter } from './post';
 import { userRouter } from './user';
+import { profileRouter } from './profile';
+import { guideRouter } from './guide';
+import { matchingRouter } from './matching';
+import { tourRequestRouter } from './tour-request';
+import { chatRouter } from './chat';
+import { reviewRouter } from './review';
+import { translationRouter } from './translation';
 
 export const appRouter = createTRPCRouter({
   user: userRouter,
-  post: postRouter,
+  profile: profileRouter,
+  guide: guideRouter,
+  matching: matchingRouter,
+  tourRequest: tourRequestRouter,
+  chat: chatRouter,
+  review: reviewRouter,
+  translation: translationRouter,
 });
 
 // tRPC 타입 export (클라이언트에서 사용)

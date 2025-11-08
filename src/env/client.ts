@@ -8,6 +8,7 @@ import { z } from 'zod';
 
 const clientSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url('NEXT_PUBLIC_APP_URL must be a valid URL'),
+  NEXT_PUBLIC_KAKAO_MAP_API_KEY: z.string().min(1, 'NEXT_PUBLIC_KAKAO_MAP_API_KEY is required'),
 });
 
 /**
@@ -19,6 +20,7 @@ const clientSchema = z.object({
  */
 export const clientEnv = clientSchema.parse({
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_KAKAO_MAP_API_KEY: process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY,
 });
 
 // 타입 export

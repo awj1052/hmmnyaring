@@ -49,12 +49,27 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  password      String?   // For credentials provider
+  password      String? // For credentials provider
+  role          UserRole  @default(TRAVELER)
   accounts      Account[]
   sessions      Session[]
-  posts         Post[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+
+  // 프로필 관계
+  guideProfile    GuideProfile?
+  travelerProfile TravelerProfile?
+
+  // 활동 관계
+  sentRequests     TourRequest[] @relation("TravelerRequests")
+  receivedRequests TourRequest[] @relation("GuideRequests")
+  sentMessages     Message[]
+  sentReviews      Review[]      @relation("ReviewAuthor")
+  receivedReviews  Review[]      @relation("ReviewReceiver")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
 }
 
 model VerificationToken {
@@ -65,17 +80,197 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Example Application Models
+// TravelMate Daejeon Enums
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?  @db.Text
-  published Boolean  @default(false)
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+enum UserRole {
+  TRAVELER // 여행자
+  GUIDE // 가이드
+  ADMIN // 관리자
+}
+
+enum Language {
+  KOREAN
+  ENGLISH
+  JAPANESE
+  CHINESE
+  SPANISH
+  FRENCH
+}
+
+enum TourCategory {
+  FOOD // 맛집
+  CAFE // 카페
+  HISTORY // 역사/문화
+  NATURE // 자연
+  SHOPPING // 쇼핑
+  NIGHTLIFE // 나이트라이프
+}
+
+enum TourRequestStatus {
+  PENDING // 대기중
+  ACCEPTED // 수락됨
+  REJECTED // 거절됨
+  COMPLETED // 완료됨
+  CANCELLED // 취소됨
+}
+
+// TravelMate Daejeon Models
+
+model GuideProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 기본 정보
+  bio         String  @db.Text
+  phoneNumber String?
+
+  // 전문 분야
+  languages      Language[]
+  categories     TourCategory[]
+  certifications String[] // ["JLPT N2", "TOEIC 900+"]
+
+  // 활동 정보
+  availableDays   String[] // ["Monday", "Wednesday", "Friday"]
+  isVerified      Boolean  @default(false)
+  verificationDoc String? // 인증서 URL
+
+  // 통계
+  totalTours    Int   @default(0)
+  averageRating Float @default(0.0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([userId])
+}
+
+model TravelerProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 선호 정보
+  preferredLanguages Language[]
+  interests          TourCategory[]
+
+  // 여행 정보
+  visitStartDate DateTime?
+  visitEndDate   DateTime?
+  nationality    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model TourRequest {
+  id     String            @id @default(cuid())
+  status TourRequestStatus @default(PENDING)
+
+  // 관계
+  travelerId String
+  traveler   User   @relation("TravelerRequests", fields: [travelerId], references: [id], onDelete: Cascade)
+
+  guideId String
+  guide   User   @relation("GuideRequests", fields: [guideId], references: [id], onDelete: Cascade)
+
+  // 투어 정보
+  requestedDate DateTime
+  message       String       @db.Text
+  category      TourCategory
+  isOnline      Boolean      @default(false) // 비대면 투어 여부
+
+  // 채팅방
+  chatRoom ChatRoom?
+
+  // 리뷰
+  review Review?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([travelerId])
+  @@index([guideId])
+  @@index([status])
+}
+
+model ChatRoom {
+  id            String      @id @default(cuid())
+  tourRequestId String      @unique
+  tourRequest   TourRequest @relation(fields: [tourRequestId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tourRequestId])
+}
+
+model Message {
+  id      String @id @default(cuid())
+  content String @db.Text
+
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  chatRoomId String
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+
+  // 장소 정보 (선택적)
+  placeId      String? // Kakao Place ID
+  placeName    String?
+  placeAddress String?
+  latitude     Float?
+  longitude    Float?
+
+  createdAt DateTime @default(now())
+
+  @@index([chatRoomId])
+  @@index([senderId])
+}
+
+model Review {
+  id      String @id @default(cuid())
+  rating  Int // 1-5
+  comment String @db.Text
+
+  tourRequestId String      @unique
+  tourRequest   TourRequest @relation(fields: [tourRequestId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  receiverId String
+  receiver   User   @relation("ReviewReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tourRequestId])
   @@index([authorId])
+  @@index([receiverId])
+}
+
+model TourLocation {
+  id          String       @id @default(cuid())
+  name        String
+  description String       @db.Text
+  category    TourCategory
+
+  // 위치 정보 (Kakao Map)
+  latitude  Float
+  longitude Float
+  address   String
+  placeId   String? // Kakao Place ID
+
+  // 이미지
+  imageUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
 }

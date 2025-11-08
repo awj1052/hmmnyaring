@@ -20,6 +20,9 @@ const serverSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1, 'GOOGLE_CLIENT_ID is required'),
   GOOGLE_CLIENT_SECRET: z.string().min(1, 'GOOGLE_CLIENT_SECRET is required'),
 
+  // Gemini API
+  GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY is required'),
+
   // Node Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 

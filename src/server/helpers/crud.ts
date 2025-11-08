@@ -17,7 +17,7 @@ import type { Context } from '../context';
  */
 export async function ensureOwnership(
   ctx: Context,
-  modelName: 'post' | 'user',
+  modelName: 'tourRequest' | 'user',
   id: string,
   userId: string
 ) {

@@ -1,26 +1,183 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 여행 앱 라이트 모드 컬러 팔레트 */
+  --background: #fefdfb;
+  --foreground: #1a1614;
+  --card: #ffffff;
+  --card-foreground: #1a1614;
+  --popover: #ffffff;
+  --popover-foreground: #1a1614;
+  
+  /* Primary: 따뜻한 코랄/오렌지 (여행의 열정) */
+  --primary: #ff6b3d;
+  --primary-foreground: #ffffff;
+  
+  /* Secondary: 터키색/청록색 (바다, 하늘, 자유) */
+  --secondary: #2dd4bf;
+  --secondary-foreground: #0f172a;
+  
+  /* Accent: 골드/앰버 (햇빛, 모험) */
+  --accent: #fbbf24;
+  --accent-foreground: #1a1614;
+  
+  /* Muted colors */
+  --muted: #f5f3f0;
+  --muted-foreground: #6b6560;
+  
+  /* Border & Input */
+  --border: #e7e3df;
+  --input: #e7e3df;
+  --ring: #ff6b3d;
+  
+  /* Destructive */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  
+  /* 그라데이션 (여행 분위기) */
+  --gradient-travel: linear-gradient(135deg, #ff6b3d 0%, #fbbf24 50%, #2dd4bf 100%);
+  --gradient-hero: linear-gradient(180deg, rgba(255, 107, 61, 0.1) 0%, rgba(45, 212, 191, 0.05) 100%);
+  
+  /* Radius */
+  --radius: 0.75rem;
+}
+
+.dark {
+  /* 여행 앱 다크 모드 컬러 팔레트 */
+  --background: #0f0d0c;
+  --foreground: #f5f3f0;
+  --card: #1a1614;
+  --card-foreground: #f5f3f0;
+  --popover: #1a1614;
+  --popover-foreground: #f5f3f0;
+  
+  /* Primary: 밝은 코랄 */
+  --primary: #ff8c66;
+  --primary-foreground: #0f0d0c;
+  
+  /* Secondary: 밝은 터키색 */
+  --secondary: #5eead4;
+  --secondary-foreground: #0f172a;
+  
+  /* Accent: 밝은 골드 */
+  --accent: #fcd34d;
+  --accent-foreground: #0f0d0c;
+  
+  /* Muted colors */
+  --muted: #262320;
+  --muted-foreground: #a8a199;
+  
+  /* Border & Input */
+  --border: #3d3834;
+  --input: #3d3834;
+  --ring: #ff8c66;
+  
+  /* Destructive */
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  
+  /* 다크모드 그라데이션 */
+  --gradient-travel: linear-gradient(135deg, #ff8c66 0%, #fcd34d 50%, #5eead4 100%);
+  --gradient-hero: linear-gradient(180deg, rgba(255, 140, 102, 0.15) 0%, rgba(94, 234, 212, 0.1) 100%);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --font-pretendard: var(--font-pretendard);
+  --radius-lg: calc(var(--radius) + 0.25rem);
+  --radius-md: var(--radius);
+  --radius-sm: calc(var(--radius) - 0.25rem);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.font-pretendard {
+  font-family: var(--font-pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+}
+
+* {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* 스크롤바 스타일링 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: var(--radius);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* 여행 테마 유틸리티 클래스 */
+.gradient-travel {
+  background: var(--gradient-travel);
+}
+
+.gradient-hero {
+  background: var(--gradient-hero);
+}
+
+.text-gradient-travel {
+  background: var(--gradient-travel);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 애니메이션 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 글래스모피즘 효과 */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(26, 22, 20, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
